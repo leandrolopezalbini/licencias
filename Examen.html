@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body {
+      background: #1a237e;
+      color: white;
+      min-height: 100vh;
+      font-family: sans-serif;
+    }
+
+    .exam-card {
+      background: white;
+      color: #333;
+      border-radius: 25px;
+      padding: 30px;
+      margin-top: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .timer-bar {
+      height: 10px;
+      background: #eee;
+      border-radius: 5px;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+
+    .timer-fill {
+      height: 100%;
+      width: 100%;
+      transition: width 1s linear;
+      background-color: #4caf50;
+    }
+
+    .option-btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      margin-bottom: 10px;
+      text-align: left;
+      background: #fff;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      transition: 0.2s;
+      cursor: pointer;
+    }
+
+    .option-btn:hover {
+      background: #f5f5f5;
+      border-color: #1a237e;
+    }
+
+    .option-btn:active {
+      transform: scale(0.98);
+      background: #e3f2fd;
+    }
+
+    .incorrect-row {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div id="pantallaDni" class="exam-card center-align" style="margin-top:10vh;">
+      <h4 class="blue-text text-darken-4 bold">Examen Teórico</h4>
+      <p>Ingrese su DNI para validar su habilitación.</p>
+      <div class="input-field">
+        <i class="material-icons prefix">fingerprint</i>
+        <input type="number" id="dniInput" style="font-size: 1.5rem; text-align:center;">
+      </div>
+      <button onclick="verificarAlumno()" id="btnValidar" class="btn-large blue darken-4" style="width:100%; border-radius:15px;">Validar Datos</button>
+    </div>
+
+    <div id="pantallaPreguntas" class="exam-card" style="display:none;">
+      <div class="row" style="margin-bottom:0;">
+        <div class="col s6 bold" id="txtProgreso">Pregunta 1/10</div>
+        <div class="col s6 right-align bold" id="txtReloj">00:00</div>
+      </div>
+      <div class="timer-bar">
+        <div id="timerFill" class="timer-fill"></div>
+      </div>
+      <h5 id="txtPregunta" class="bold">Cargando...</h5>
+      <div id="opcionesBox"></div>
+    </div>
+
+    <div id="pantallaResultados" class="exam-card center-align" style="display:none;">
+      <div id="resultadoVisual"></div>
+      <h4>Calificación: <span id="notaFinal">0</span>%</h4>
+      <div id="feedbackPanel" style="margin:20px 0;"></div>
+      <button id="btnVerFallos" class="btn orange darken-3" style="display:none;" onclick="mostrarRevision()">Ver Errores</button>
+      <br><br>
+      <a href="<?= inst.url ?>" target="_top" class="btn-large blue darken-4">Finalizar y Salir</a>
+      <div id="listaFallos" style="display:none; margin-top:20px; text-align:left;">
+        <table class="striped">
+          <tbody id="tablaFallos"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let preguntas = [], indice = 0, respuestas = [], timer, tiempoRestante, dniActual;
+    let respuestasParaServidor = {};
+
+    window.onbeforeunload = () => "Si sales ahora, perderás el progreso.";
+
+    function verificarAlumno() {
+      const dniInput = document.getElementById('dniInput').value;
+      if (!dniInput) {
+        Swal.fire('Atención', 'Por favor, ingrese su DNI', 'warning');
+        return;
+      }
+
+      dniActual = dniInput;
+      const btn = document.getElementById('btnValidar');
+      btn.disabled = true;
+
+      google.script.run.withSuccessHandler(res => {
+        btn.disabled = false;
+        if (!res.success) {
+          Swal.fire('No encontrado', res.message, 'error');
+          return;
+        }
+
+        const alu = res.data;
+        const estado = alu.estadoExamen ? alu.estadoExamen.toString().toUpperCase().trim() : "";
+        const asistencia = parseFloat(alu.asistencia) || 0;
+        const notaPrevia = alu.notaRegistrada;
+
+        // --- NUEVA LÓGICA DE ACCESO ---
+
+        // 1. Si el estado es HABILITADO, entra directo (aunque tenga nota vieja)
+        if (asistencia >= 100 && estado === "HABILITADO") {
+          document.getElementById('pantallaDni').style.display = 'none';
+          document.getElementById('pantallaPreguntas').style.display = 'block';
+          iniciarCargaPreguntas();
+        } 
+        // 2. Si NO dice HABILITADO pero ya tiene una nota, bloqueamos porque ya rindió ese turno
+        else if (notaPrevia !== "" && notaPrevia !== null && !isNaN(notaPrevia)) {
+          Swal.fire({
+            title: 'Examen ya realizado',
+            text: `Tu última calificación registrada es: ${notaPrevia}%. Si debes rendir nuevamente, solicita habilitación.`,
+            icon: 'info',
+            confirmButtonColor: '#1a237e'
+          });
+        } 
+        // 3. Casos de error (No habilitado o falta asistencia)
+        else {
+          let mensaje = "";
+          if (asistencia < 100) {
+            mensaje = "No posees el 100% de asistencia (clases 1 y 2).";
+          } else {
+            mensaje = "Tu usuario todavía no ha sido habilitado para rendir hoy. Por favor, avisa al instructor.";
+          }
+
+          Swal.fire({
+            title: 'Acceso Denegado',
+            text: mensaje,
+            icon: 'warning',
+            confirmButtonColor: '#1a237e'
+          });
+        }
+      }).withFailureHandler(err => {
+        btn.disabled = false;
+        Swal.fire('Error de Conexión', 'No se pudo contactar con el servidor.', 'error');
+      }).obtenerDatosMesa(dniActual);
+    }
+
+    function iniciarCargaPreguntas() {
+      google.script.run.withSuccessHandler(data => {
+        preguntas = data;
+        mostrarPregunta();
+      }).obtenerTodasLasPreguntas();
+    }
+
+    function mostrarPregunta() {
+      if(indice >= preguntas.length) return finalizar();
+
+      const p = preguntas[indice];
+      // Actualizar progreso
+      document.getElementById('txtProgreso').innerText = "Pregunta " + (indice + 1) + "/" + preguntas.length;
+
+      // Renderizado de pregunta (Soporta el HTML de la imagen enviado por el servidor)
+      document.getElementById('txtPregunta').innerHTML = p.texto; 
+
+      const box = document.getElementById('opcionesBox');
+      box.innerHTML = "";
+
+      // Usamos las claves a, b, c que vienen del servidor
+      ['a','b','c'].forEach(opt => {
+        if(p.opciones && p.opciones[opt]) {
+          const btn = document.createElement('button');
+          btn.className = "option-btn";
+          btn.innerHTML = "<b>" + opt.toUpperCase() + ")</b> " + p.opciones[opt];
+          btn.onclick = () => procesarRespuesta(opt);
+          box.appendChild(btn);
+        }
+      });
+      
+      // Ajuste: si la pregunta no tiene tiempo definido, usamos 30 por defecto
+      iniciarReloj(p.tiempo || 30);
+    }
+
+    function procesarRespuesta(opt) {
+      clearInterval(timer);
+      const p = preguntas[indice];
+      
+      // Guardamos la respuesta usando el índice para evitar colisiones por texto duplicado
+      respuestasParaServidor[indice] = opt;
+
+      const esCorrecta = (opt === p.correcta);
+      respuestas.push({
+        pregunta: p.texto, // Aquí se guarda el HTML de la pregunta para la revisión final
+        resultado: esCorrecta ? 'OK' : (opt === 'skip' ? 'TIEMPO' : 'ERROR'),
+        marco: opt === 'skip' ? 'TIEMPO AGOTADO' : (p.opciones[opt] || "S/D"),
+        correcta: p.opciones[p.correcta]
+      });
+      
+      indice++;
+      // Pequeño delay para que el usuario no sienta un salto brusco
+      setTimeout(mostrarPregunta, 100);
+    }
+
+    function iniciarReloj(seg) {
+      clearInterval(timer);
+      tiempoRestante = seg;
+      const fill = document.getElementById('timerFill');
+      timer = setInterval(() => {
+        tiempoRestante--;
+        fill.style.width = (tiempoRestante / seg * 100) + "%";
+        document.getElementById('txtReloj').innerText = `00:${tiempoRestante.toString().padStart(2,'0')}`;
+        if(tiempoRestante <= 0) procesarRespuesta('skip');
+      }, 1000);
+    }
+
+    function finalizar() {
+      window.onbeforeunload = null;
+      Swal.fire({ title:'Evaluando...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
+
+      google.script.run.withSuccessHandler(res => {
+        Swal.close();
+        document.getElementById('pantallaPreguntas').style.display = 'none';
+        document.getElementById('pantallaResultados').style.display = 'block';
+        document.getElementById('notaFinal').innerText = res.nota;
+
+        const visual = document.getElementById('resultadoVisual');
+        const feedback = document.getElementById('feedbackPanel');
+        
+        if (res.aprobado) {
+          visual.innerHTML = '<i class="material-icons large green-text">check_circle</i>';
+          feedback.innerHTML = '<h5 class="green-text bold">¡APROBADO!</h5>';
+        } else {
+          visual.innerHTML = '<i class="material-icons large red-text">cancel</i>';
+          const motivo = res.excluyente ? "Fallaste en una pregunta EXCLUYENTE." : "No alcanzaste el 75%.";
+          feedback.innerHTML = `<h5 class="red-text bold">REPROBADO</h5><p>${motivo}</p>`;
+          document.getElementById('btnVerFallos').style.display = 'inline-block';
+        }
+      }).procesarExamenDesdeCliente(respuestasParaServidor, dniActual);
+    }
+
+    function mostrarRevision() {
+      const tabla = document.getElementById('tablaFallos');
+      tabla.innerHTML = '<tr><th>Pregunta</th><th>Tu Respuesta</th><th>Estado</th></tr>';
+      
+      // Usamos "respuestas" (la variable global del inicio del script) 
+      // que ya tiene el formato de Array
+      if (Array.isArray(respuestas)) {
+        respuestas.forEach(r => {
+          const fila = `<tr class="${r.resultado === 'OK' ? '' : 'incorrect-row'}">
+            <td>${r.pregunta}</td>
+            <td>${r.marco}</td>
+            <td>${r.resultado}</td>
+          </tr>`;
+          tabla.innerHTML += fila;
+        });
+        document.getElementById('listaFallos').style.display = 'block';
+        document.getElementById('listaFallos').scrollIntoView({behavior:'smooth'});
+      } else {
+        console.error("La variable respuestas no es un array válido");
+      }
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    :root {
+      --azul: #1565c0;
+      --verde: #2e7d32;
+    }
+
+    body {
+      background: #f0f2f5;
+    }
+
+    .nav-mesa {
+      background: var(--azul);
+      padding: 10px 20px;
+      color: white;
+      margin-bottom: 20px;
+    }
+
+    .card-alumno {
+      border-radius: 15px;
+      margin-top: 20px;
+      display: none;
+    }
+
+    .status-badge {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-weight: bold;
+      color: white;
+    }
+
+    .bg-aprobado {
+      background-color: var(--verde);
+    }
+
+    .bg-desaprobado {
+      background-color: #d32f2f;
+    }
+
+    .bg-pendiente {
+      background-color: #ffa000;
+    }
+
+    .loader {
+      display: none;
+      margin: 20px auto;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="nav-mesa">
+    <div class="row" style="margin-bottom: 0;">
+      <div class="col s8">
+        <h5>Mesa de Entradas</h5>
+      </div>
+      <div class="col s4 right-align"><img src="<?= inst.logo ?>" style="max-height: 40px;"></div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card" style="border-radius: 15px;">
+      <div class="card-content">
+        <span class="card-title">Buscar Alumno por DNI</span>
+        <div class="row" style="margin-bottom: 0; display: flex; align-items: center;">
+          <div class="input-field col s9 m10">
+            <i class="material-icons prefix">search</i>
+            <input type="number" id="dniBusqueda" placeholder="Ingrese DNI sin puntos">
+          </div>
+          <div class="col s3 m2">
+            <button class="btn-floating btn-large blue darken-3" onclick="buscarAlumno()">
+              <i class="material-icons">search</i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="center-align loader" id="loader">
+      <div class="preloader-wrapper small active">
+        <div class="spinner-layer spinner-blue-only">
+          <div class="circle-clipper left">
+            <div class="circle"></div>
+          </div>
+          <div class="gap-patch">
+            <div class="circle"></div>
+          </div>
+          <div class="circle-clipper right">
+            <div class="circle"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="resultadoBusqueda" class="card card-alumno">
+      <div class="card-content">
+        <div class="row">
+          <div class="col s12 m8">
+            <h4 id="nombreAlumno" class="blue-text text-darken-4" style="margin-top:0;"></h4>
+            <p><strong>DNI:</strong> <span id="infoDni"></span></p>
+            <p><strong>Categoría:</strong> <span id="infoCat"></span></p>
+            <p><strong>Sede:</strong> <span id="infoSede"></span></p>
+            <p><strong>Estado Examen:</strong> <span id="infoEstado" class="status-badge"></span></p>
+          </div>
+          <div class="col s12 m4 right-align">
+            <p><strong>Asistencia:</strong> <span id="infoAsistencia"></span>%</p>
+            <p><strong>Trámite:</strong> <span id="infoTramite">Pendiente</span></p>
+          </div>
+        </div>
+
+        <div class="divider" style="margin: 20px 0;"></div>
+
+        <div class="row">
+          <div class="col s12 m4">
+            <button class="btn waves-effect waves-light blue darken-1 col s12" onclick="verRespuestas()">
+              <i class="material-icons left">assignment</i> Ver Respuestas
+            </button>
+          </div>
+          <div class="col s12 m4">
+            <button id="btnCertificado" class="btn waves-effect waves-light orange darken-3 col s12" onclick="descargarCertificado()">
+              <i class="material-icons left">picture_as_pdf</i> Certificado
+            </button>
+          </div>
+          <div class="col s12 m4">
+            <button id="btnFinalizar" class="btn waves-effect waves-light green darken-3 col s12" onclick="finalizarTramite()">
+              <i class="material-icons left">check_circle</i> Finalizar Trámite
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script>
+    const DNI_OPERADOR = "<?= user.dni ?>"; 
+    let ALUMNO_ACTUAL = null;
+
+  function buscarAlumno() {
+    const dni = document.getElementById('dniBusqueda').value;
+    if(!dni) return M.toast({html: 'Ingrese un DNI'});
+
+    document.getElementById('loader').style.display = 'block';
+    document.getElementById('resultadoBusqueda').style.display = 'none';
+
+    google.script.run
+      .withSuccessHandler(res => {
+        document.getElementById('loader').style.display = 'none';
+        if(res.success) {
+          mostrarAlumno(res.data);
+        } else {
+          Swal.fire('No encontrado', res.message, 'warning');
+        }
+      })
+      .obtenerDatosMesa(dni); 
+  }
+
+  function mostrarAlumno(data) {
+    ALUMNO_ACTUAL = data;
+    document.getElementById('resultadoBusqueda').style.display = 'block';
+    document.getElementById('nombreAlumno').innerText = data.apellido + ', ' + data.nombre;
+    document.getElementById('infoDni').innerText = data.dni;
+    document.getElementById('infoCat').innerText = data.categoria || 'Sin definir';
+    document.getElementById('infoSede').innerText = data.institucion || 'No asignada';
+    document.getElementById('infoAsistencia').innerText = Math.round(data.asistencia) || 0;
+    
+    const badge = document.getElementById('infoEstado');
+    const valorExamen = data.estadoExamen; // Aquí viene el número, "HABILITADO" o vacío
+
+    // LÓGICA DE ESTADOS SEGÚN TU PLANILLA (Columna O)
+    if (!valorExamen) {
+      badge.innerText = 'CURSANDO';
+      badge.className = 'status-badge bg-pendiente';
+    } else if (valorExamen === 'HABILITADO') {
+      badge.innerText = 'HABILITADO PARA RENDIR';
+      badge.className = 'status-badge blue darken-1'; // Azul para indicar que puede rendir
+    } else if (!isNaN(valorExamen)) {
+      // Si es un número (ej: 75)
+      const nota = parseInt(valorExamen);
+      if (nota >= 70) {
+        badge.innerText = 'APROBADO (' + nota + '%)';
+        badge.className = 'status-badge bg-aprobado';
+      } else {
+        badge.innerText = 'DESAPROBADO (' + nota + '%)';
+        badge.className = 'status-badge bg-desaprobado';
+      }
+    } else {
+      badge.innerText = valorExamen;
+      badge.className = 'status-badge grey';
+    }
+
+    document.getElementById('infoTramite').innerText = data.tramite || 'PENDIENTE';
+    
+    // Bloquear botones si no corresponde
+    document.getElementById('btnFinalizar').disabled = (data.tramite === 'FINALIZADO');
+    // El certificado solo se habilita si tiene nota y es >= 70
+    const aprobado = (!isNaN(valorExamen) && parseInt(valorExamen) >= 70);
+    document.getElementById('btnCertificado').disabled = !aprobado;
+  }
+
+  function verRespuestas() {
+  if (!ALUMNO_ACTUAL.respuestas || ALUMNO_ACTUAL.respuestas.includes("No hay registro")) {
+    return Swal.fire('Sin datos', 'No hay registros de respuestas para este examen.', 'info');
+  }
+
+  try {
+    const resp = JSON.parse(ALUMNO_ACTUAL.respuestas);
+    let html = `
+      <div style="text-align:left; max-height:450px; overflow-y:auto; font-family: sans-serif;">
+        <table style="width:100%; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 2px solid #eee;">
+              <th style="padding:10px;">#</th>
+              <th style="padding:10px;">Pregunta / Respuesta</th>
+              <th style="padding:10px; text-align:center;">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    resp.forEach((r, i) => {
+      // Ajuste de nombres de propiedades: r.pregunta y r.resultado (o r.estado)
+      const esCorrecta = r.resultado === 'OK' || r.estado === 'OK';
+      const colorBg = esCorrecta ? '#e8f5e9' : '#ffebee';
+      const colorTexto = esCorrecta ? '#2e7d32' : '#c62828';
+      const icono = esCorrecta ? 'check' : 'close';
+      
+      // Manejamos si el fallo fue por excluyente
+      const esExcluyente = r.fueExcluyente || r.estado === "FALLO EXCLUYENTE";
+
+      html += `
+        <tr style="background-color: ${colorBg}; border-bottom: 1px solid #fff;">
+          <td style="padding:10px; font-weight:bold;">${i + 1}</td>
+          <td style="padding:10px; font-size: 0.9em;">
+            <b>${r.pregunta || r.n}</b><br>
+            <small style="color:#666">Marcó: ${r.marco || r.respuesta}</small>
+            ${esExcluyente ? '<br><b class="red-text" style="font-size:0.7rem;">[FALLO EXCLUYENTE]</b>' : ''}
+          </td>
+          <td style="padding:10px; text-align:center; color: ${colorTexto}">
+            <i class="material-icons" style="font-size:18px; vertical-align:middle;">${icono}</i>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += '</tbody></table></div>';
+
+    Swal.fire({
+      title: 'Detalle Técnico del Examen',
+      html: html,
+      width: '700px',
+      confirmButtonText: 'Cerrar',
+      confirmButtonColor: '#1a237e'
+    });
+
+  } catch (e) {
+    Swal.fire({ title: 'Registro de Respuestas', text: ALUMNO_ACTUAL.respuestas, icon: 'info' });
+  }
+}
+
+  function finalizarTramite() {
+    if (!ALUMNO_ACTUAL) return;
+    Swal.fire({
+      title: '¿Confirmar Cierre?',
+      text: "Se marcará el trámite como FINALIZADO y quedará registrado.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#2e7d32',
+      confirmButtonText: 'Sí, finalizar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // PASAMOS DNI_OPERADOR
+        google.script.run.withSuccessHandler(res => {
+          Swal.fire('Éxito', 'Trámite cerrado correctamente', 'success');
+          buscarAlumno(); 
+        }).marcarTramiteFinalizado(ALUMNO_ACTUAL.dni, DNI_OPERADOR);
+      }
+    });
+  }
+
+  function descargarCertificado() {
+    if (!ALUMNO_ACTUAL) return;
+    M.toast({html: 'Generando PDF y finalizando trámite...'});
+    
+    // PASAMOS DNI_OPERADOR para que el servidor registre quién emitió el título
+    google.script.run
+      .withSuccessHandler(res => {
+        if (res.success) {
+          if(res.url) {
+            const a = document.createElement('a');
+            a.href = res.url;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
+          else if(res.base64) {
+            const link = document.createElement('a');
+            link.href = 'data:application/pdf;base64,' + res.base64;
+            link.download = `Certificado_${ALUMNO_ACTUAL.dni}.pdf`;
+            link.click();
+          }
+          Swal.fire('Éxito', 'Certificado generado y trámite finalizado', 'success');
+          buscarAlumno();
+        } else {
+          Swal.fire('Atención', res.message, 'warning');
+        }
+      })
+      .generarCertificadoAlumno(ALUMNO_ACTUAL.dni, DNI_OPERADOR);
+  }
+
+  </script>
+</body>
+
+</html>
