@@ -204,16 +204,27 @@
       const box = document.getElementById('opcionesBox');
       box.innerHTML = "";
 
-      // Usamos las claves a, b, c que vienen del servidor
-      ['a','b','c'].forEach(opt => {
-        if(p.opciones && p.opciones[opt]) {
+      const renderOptionHTML = (opt, content) => {
+        const safeContent = content || '';
+        // Permite HTML (imágenes, etc.) devuelto desde el servidor
+        return `<b>${opt.toUpperCase()})</b> ${safeContent}`;
+      };
+
+      if (!p.opciones) {
+        box.innerHTML = '<p class="red-text">No se encontraron opciones para esta pregunta.</p>';
+      } else {
+        // Usamos las claves a, b, c que vienen del servidor
+        ['a','b','c'].forEach(opt => {
+          const optText = p.opciones?.[opt];
+          if (!optText) return;
+
           const btn = document.createElement('button');
           btn.className = "option-btn";
-          btn.innerHTML = "<b>" + opt.toUpperCase() + ")</b> " + p.opciones[opt];
+          btn.innerHTML = renderOptionHTML(opt, optText);
           btn.onclick = () => procesarRespuesta(opt);
           box.appendChild(btn);
-        }
-      });
+        });
+      }
       
       // Ajuste: si la pregunta no tiene tiempo definido, usamos 30 por defecto
       iniciarReloj(p.tiempo || 30);

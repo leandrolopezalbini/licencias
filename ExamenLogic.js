@@ -253,38 +253,44 @@ function obtenerTodasLasPreguntas() {
     // --- LÓGICA DE MEZCLA (COMENTADA POR AHORA) ---
     // preguntasRaw.sort(() => Math.random() - 0.5);
 
-    return preguntasRaw.map((r, i) => {
-      let textoOriginal = r[0].toString();
-      let htmlFinal = "";
+    const procesarTexto = (textoOriginal) => {
+      if (!textoOriginal) return '';
+      const texto = textoOriginal.toString();
 
-      if (textoOriginal.includes('obtenerUrlImagen')) {
-        const idMatch = textoOriginal.match(/'([^']+)'/);
+      // Caso especial: placeholder para insertar imagen desde Drive
+      // Ejemplo: obtenerUrlImagen('ID_DEL_ARCHIVO')
+      if (texto.includes('obtenerUrlImagen')) {
+        const idMatch = texto.match(/obtenerUrlImagen\(['"]([^'"\)]+)['"]\)/);
         if (idMatch && idMatch[1]) {
           const idImagen = idMatch[1];
-          
-          // NUEVO FORMATO DE URL: Más compatible con Web Apps
           const urlReal = `https://drive.google.com/thumbnail?id=${idImagen}&sz=w500`;
-          
-          let soloTexto = textoOriginal
+
+          const soloTexto = texto
             .replace(/<img[^>]+>/g, "")
-            .replace(/obtenerUrlImagen\('[^']+'\)/g, "")
+            .replace(/obtenerUrlImagen\(['"][^'"]+['"]\)/g, "")
             .replace(/["'=]/g, "")
             .trim();
 
-          htmlFinal = `<div style="text-align:center;">
-                         <img src="${urlReal}" style="width:100%; max-width:280px; border-radius:10px; margin-bottom:10px;">
-                         <p>${soloTexto}</p>
-                       </div>`;
+          return `<div style="text-align:center;">
+                    <img src="${urlReal}" style="width:100%; max-width:280px; border-radius:10px; margin-bottom:10px;">
+                    <p>${soloTexto}</p>
+                  </div>`;
         }
-      } else {
-        htmlFinal = textoOriginal;
       }
 
+      return texto;
+    };
+
+    return preguntasRaw.map((r, i) => {
       return {
         id: i + 1,
-        texto: htmlFinal, 
-        opciones: { a: r[1], b: r[2], c: r[3] },
-        correcta: r[4].toString().toLowerCase().trim(),
+        texto: procesarTexto(r[0]),
+        opciones: {
+          a: procesarTexto(r[1]),
+          b: procesarTexto(r[2]),
+          c: procesarTexto(r[3])
+        },
+        correcta: (r[4] || '').toString().toLowerCase().trim(),
         puntos: parseFloat(r[5]) || 1,
         tiempo: parseInt(r[6]) || 30,
         excluyente: (r[7] && r[7].toString().toUpperCase() === "SI")
