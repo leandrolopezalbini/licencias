@@ -68,8 +68,9 @@ function cerrarSesion({ redirectTo = '/' } = {}) {
   }
 }
 
-// 4. Lógica de Negocio
-function loginPersonal() {
+// 4. Lógica de Negocio (cliente)
+// Nota: No debe colisionar con la función server-side `loginPersonal`.
+function loginPersonalUI() {
   const dni = document.getElementById('dni')?.value.trim();
   const pass = document.getElementById('pass')?.value.trim();
 
