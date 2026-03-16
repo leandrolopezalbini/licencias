@@ -90,7 +90,9 @@ function enviarExamen() {
     return M.toast({html: 'No se detectaron respuestas para procesar', classes: 'orange'});
   }
 
-  const respuestas = {};
+  const respuestas = typeof data[i][5] === "string"
+  ? JSON.parse(data[i][5])
+  : data[i][5];
   inputs.forEach(input => {
     const nameParts = (input.name || '').split('_');
     if (nameParts.length < 2) return;

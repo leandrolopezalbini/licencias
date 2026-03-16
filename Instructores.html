@@ -37,19 +37,54 @@
       overflow: hidden;
       padding: 10px;
     }
+.hero {
+  text-align: center;
+  margin-bottom: 40px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.hero img {
+  max-height: 100px;
+  margin-bottom: 10px;
+}
+
+.hero-link{
+  text-decoration:none;
+  color:inherit;
+  display:block;
+}
+
+.hero:hover{
+  opacity:0.9;
+  transition:0.2s;
+}
   </style>
 </head>
 
 <body>
+  <div class="container">
 
-  <div class="nav-inst">
-    <div class="row" style="margin-bottom: 0;">
-      <div class="col s8">
-        <h5>Panel de Instructores</h5>
+    <a href="<?= inst.url ?>" class="hero-link" target="_top">
+      <div class="hero">
+        <img src="<?= inst.logo ?>" alt="Logo Institución">
+        <h4 class="bold blue-text text-darken-4">
+          <?= inst.nombre ?>
+        </h4>
+        <p class="grey-text">Licencia en tu barrio</p>
       </div>
-      <div class="col s4 right-align"><img src="<?= inst.logo ?>" style="max-height: 40px;"></div>
+    </a>
+
+    <div class="nav-inst">
+      <div class="row" style="margin-bottom:0;">
+        <div class="col s8">
+          <h5>Panel de Instructores</h5>
+        </div>
+        <div class="col s4 right-align">
+          <img src="<?= inst.logo ?>" style="max-height:40px;">
+        </div>
+      </div>
     </div>
-  </div>
 
   <div class="container">
     <div class="header-filtros">

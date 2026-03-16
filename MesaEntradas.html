@@ -53,19 +53,54 @@
       display: none;
       margin: 20px auto;
     }
+    .hero {
+  text-align: center;
+  margin-bottom: 40px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.hero img {
+  max-height: 100px;
+  margin-bottom: 10px;
+}
+
+.hero-link{
+  text-decoration:none;
+  color:inherit;
+  display:block;
+}
+
+.hero:hover{
+  opacity:0.9;
+  transition:0.2s;
+}
   </style>
 </head>
 
 <body>
+  <div class="container">
 
-  <div class="nav-mesa">
-    <div class="row" style="margin-bottom: 0;">
-      <div class="col s8">
-        <h5>Mesa de Entradas</h5>
+    <a href="<?= inst.url ?>" class="hero-link" target="_top">
+      <div class="hero">
+        <img src="<?= inst.logo ?>" alt="Logo Institución">
+        <h4 class="bold blue-text text-darken-4">
+          <?= inst.nombre ?>
+        </h4>
+        <p class="grey-text">Licencia en tu barrio</p>
       </div>
-      <div class="col s4 right-align"><img src="<?= inst.logo ?>" style="max-height: 40px;"></div>
+    </a>
+
+    <div class="nav-mesa">
+      <div class="row" style="margin-bottom:0;">
+        <div class="col s8">
+          <h5>Mesa de Entradas</h5>
+        </div>
+        <div class="col s4 right-align">
+          <img src="<?= inst.logo ?>" style="max-height:40px;">
+        </div>
+      </div>
     </div>
-  </div>
 
   <div class="container">
     <div class="card" style="border-radius: 15px;">
@@ -207,7 +242,10 @@
     document.getElementById('btnCertificado').disabled = !aprobado;
   }
 
-  function verRespuestas() {
+function verRespuestas() {
+
+  console.log(ALUMNO_ACTUAL);
+  console.log(ALUMNO_ACTUAL.respuestas);
   if (!ALUMNO_ACTUAL.respuestas || ALUMNO_ACTUAL.respuestas.includes("No hay registro")) {
     return Swal.fire('Sin datos', 'No hay registros de respuestas para este examen.', 'info');
   }

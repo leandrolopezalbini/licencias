@@ -230,26 +230,26 @@
       iniciarReloj(p.tiempo || 30);
     }
 
-    function procesarRespuesta(opt) {
-      clearInterval(timer);
-      const p = preguntas[indice];
-      
-      // Guardamos la respuesta usando el índice para evitar colisiones por texto duplicado
-      respuestasParaServidor[indice] = opt;
+  function procesarRespuesta(opt) {
+    clearInterval(timer);
+    const p = preguntas[indice];
 
-      const esCorrecta = (opt === p.correcta);
-      respuestas.push({
-        pregunta: p.texto, // Aquí se guarda el HTML de la pregunta para la revisión final
-        resultado: esCorrecta ? 'OK' : (opt === 'skip' ? 'TIEMPO' : 'ERROR'),
-        marco: opt === 'skip' ? 'TIEMPO AGOTADO' : (p.opciones[opt] || "S/D"),
-        correcta: p.opciones[p.correcta]
-      });
-      
-      indice++;
-      // Pequeño delay para que el usuario no sienta un salto brusco
-      setTimeout(mostrarPregunta, 100);
-    }
+    respuestasParaServidor[indice] = opt;
 
+    const esCorrecta = (opt === p.correcta);    
+
+    respuestas.push({
+      pregunta: p.texto,
+      respuesta: opt === 'skip' ? 'TIEMPO AGOTADO' : p.opciones[opt],
+      correcta: p.opciones[p.correcta],
+      estado: esCorrecta ? 'OK' : (opt === 'skip' ? 'TIEMPO' : 'ERROR'),
+      excluyente: p.excluyente === true || p.excluyente === "SI",
+      tiempo: Math.floor((Date.now() - tiempoInicioPregunta) / 1000)
+    });
+
+    indice++;
+    setTimeout(mostrarPregunta, 100);
+  }
     function iniciarReloj(seg) {
       clearInterval(timer);
       tiempoRestante = seg;
@@ -287,27 +287,75 @@
       }).procesarExamenDesdeCliente(respuestasParaServidor, dniActual);
     }
 
-    function mostrarRevision() {
-      const tabla = document.getElementById('tablaFallos');
-      tabla.innerHTML = '<tr><th>Pregunta</th><th>Tu Respuesta</th><th>Estado</th></tr>';
-      
-      // Usamos "respuestas" (la variable global del inicio del script) 
-      // que ya tiene el formato de Array
-      if (Array.isArray(respuestas)) {
-        respuestas.forEach(r => {
-          const fila = `<tr class="${r.resultado === 'OK' ? '' : 'incorrect-row'}">
-            <td>${r.pregunta}</td>
-            <td>${r.marco}</td>
-            <td>${r.resultado}</td>
-          </tr>`;
-          tabla.innerHTML += fila;
-        });
-        document.getElementById('listaFallos').style.display = 'block';
-        document.getElementById('listaFallos').scrollIntoView({behavior:'smooth'});
-      } else {
-        console.error("La variable respuestas no es un array válido");
-      }
-    }
+function mostrarRevision() {
+  
+  const tabla = document.getElementById('tablaFallos');
+
+  if (!Array.isArray(respuestas)) {
+    console.error("La variable respuestas no es un array válido");
+    return;
+  }
+
+  // Mejora UX: contar errores
+  const errores = respuestas.filter(r => r.estado !== 'OK').length;
+
+  tabla.innerHTML = `
+  <tr>
+    <td colspan="4" style="font-size:1.1rem; padding:10px;">
+      <b>Errores cometidos: ${errores}</b> de ${respuestas.length}
+    </td>
+  </tr>
+  <tr>
+    <th>Pregunta</th>
+    <th>Tu Respuesta</th>
+    <th>Respuesta Correcta</th>
+    <th>Estado</th>
+  </tr>`;
+
+  respuestas.forEach(r => {
+
+    const esError = r.estado !== 'OK';
+
+    const fila = `
+    <tr class="${esError ? 'incorrect-row' : ''}">
+
+      <td style="max-width:400px;">
+        ${r.pregunta}
+        ${r.excluyente && esError 
+          ? '<br><span class="red-text bold">⚠ FALLO EXCLUYENTE</span>' 
+          : ''}
+      </td>
+
+      <td>
+        ${r.respuesta || '-'} 
+        ${esError ? '❌' : '✅'}
+      </td>
+
+      <td>
+        ${esError 
+          ? '<span class="green-text bold">'+ (r.correcta || '-') +' ✅</span>' 
+          : '-'}
+      </td>
+
+      <td>
+        ${r.estado === 'OK'
+          ? '<span class="green-text bold">Correcta</span>'
+          : '<span class="red-text bold">Incorrecta</span>'}
+      </td>
+
+    </tr>`;
+
+    tabla.innerHTML += fila;
+
+  });
+
+  document.getElementById('listaFallos').style.display = 'block';
+
+  document.getElementById('listaFallos').scrollIntoView({
+    behavior: 'smooth'
+  });
+
+}
   </script>
 </body>
 

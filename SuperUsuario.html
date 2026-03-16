@@ -46,32 +46,67 @@
     .tabs .indicator {
       background-color: #263238;
     }
+    .hero {
+  text-align: center;
+  margin-bottom: 40px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.hero img {
+  max-height: 100px;
+  margin-bottom: 10px;
+}
+
+.hero-link{
+  text-decoration:none;
+  color:inherit;
+  display:block;
+}
+
+.hero:hover{
+  opacity:0.9;
+  transition:0.2s;
+}
   </style>
 </head>
 
 <body>
+  <div class="container">
 
-  <nav class="nav-admin">
-    <div class="nav-wrapper">
-      <span class="brand-logo" style="font-size: 1.2rem;">Panel de Control Total</span>
-      <ul id="nav-mobile" class="right">
-        <li><img src="<?= inst.logo ?>" style="max-height: 40px; vertical-align: middle;"></li>
-      </ul>
-    </div>
-  </nav>
+    <a href="<?= inst.url ?>" class="hero-link" target="_top">
+      <div class="hero">
+        <img src="<?= inst.logo ?>" alt="Logo Institución">
+        <h4 class="bold blue-text text-darken-4">
+          <?= inst.nombre ?>
+        </h4>
+        <p class="grey-text">Licencia en tu barrio</p>
+      </div>
+    </a>
 
-  <div class="container" style="width: 95%; margin-top: 20px;">
-    <div class="row">
-      <div class="col s12">
-        <ul class="tabs z-depth-1" style="border-radius: 15px 15px 0 0;">
-          <li class="tab col s2"><a class="active" href="#tabEstadisticas">Estadísticas</a></li>
-          <li class="tab col s2"><a href="#tabCursos">Cursos / Sedes</a></li>
-          <li class="tab col s2"><a href="#tabPreguntas">Preguntas</a></li>
-          <li class="tab col s3"><a href="#tabAlumnos">Gestión Alumnos</a></li>
-          <li class="tab col s3"><a href="#tabTrazabilidad">Historial Log</a></li>
-          <li class="tab col s3"><a href="#tabCupos">Disponibilidad</a></li>
+    <nav class="nav-admin">
+      <div class="nav-wrapper">
+        <span class="brand-logo" style="font-size: 1.2rem;">Panel de Control Total</span>
+        <ul class="right">
+          <li>
+            <img src="<?= inst.logo ?>" style="max-height: 40px; vertical-align: middle;">
+          </li>
         </ul>
       </div>
+    </nav>
+
+    <div style="margin-top:20px;">
+      <div class="row">
+        <div class="col s12">
+          <ul class="tabs z-depth-1" style="border-radius:15px 15px 0 0;">
+            <li class="tab col s2"><a class="active" href="#tabEstadisticas">Estadísticas</a></li>
+            <li class="tab col s2"><a href="#tabCursos">Cursos / Sedes</a></li>
+            <li class="tab col s2"><a href="#tabPreguntas">Preguntas</a></li>
+            <li class="tab col s3"><a href="#tabAlumnos">Gestión Alumnos</a></li>
+            <li class="tab col s3"><a href="#tabTrazabilidad">Historial Log</a></li>
+            <li class="tab col s3"><a href="#tabCupos">Disponibilidad</a></li>
+          </ul>
+        </div>
 
       <div id="tabEstadisticas" class="col s12 tab-content z-depth-1">
         <div style="padding: 10px;">

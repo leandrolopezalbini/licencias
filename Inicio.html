@@ -20,17 +20,28 @@
       align-items: center;
     }
 
-    .hero {
-      text-align: center;
-      margin-bottom: 40px;
-      width: 100%;
-    }
+.hero {
+  text-align: center;
+  margin-bottom: 40px;
+  width: 100%;
+  cursor: pointer;
+}
 
-    .hero img {
-      max-height: 100px;
-      margin-bottom: 10px;
-    }
+.hero img {
+  max-height: 100px;
+  margin-bottom: 10px;
+}
 
+.hero-link{
+  text-decoration:none;
+  color:inherit;
+  display:block;
+}
+
+.hero:hover{
+  opacity:0.9;
+  transition:0.2s;
+}
     .menu-card {
       border-radius: 20px;
       transition: 0.3s;
@@ -69,13 +80,16 @@
 
 <body>
   <div class="container">
-    <div class="hero">
-      <img src="<?= inst.logo ?>">
-      <h4 class="bold blue-text text-darken-4">
-        <?= inst.nombre ?>
-      </h4>
-      <p class="grey-text">Licencia en tu barrio</p>
-    </div>
+
+    <a href="<?= inst.url ?>" class="hero-link">
+      <div class="hero">
+        <img src="<?= inst.logo ?>">
+        <h4 class="bold blue-text text-darken-4">
+          <?= inst.nombre ?>
+        </h4>
+        <p class="grey-text">Licencia en tu barrio</p>
+      </div>
+    </a>
     <div class="row">
       <div class="col s12 m4">
         <div class="card menu-card center-align" onclick="window.top.location.href='<?= inst.url ?>?p=inscripcion'">

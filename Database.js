@@ -233,55 +233,60 @@ function procesarNuevaInscripcion(datos) {
       return { success: false, message: "Ya existe una inscripción activa para el DNI " + dniLimpio };
     }
 
-    // 2. BUSCAR INFO DE SEDE (Barrio y Fechas)
+    // 2. BUSCAR INFO DE SEDE
     const sedes = getSheet(SHEETS.BARRIOS).getDataRange().getValues();
-    // datos.inst es lo que viene del HTML
     let infoSede = sedes.find(s => s[1] === datos.inst) || [];
     const barrioEncontrado = infoSede[0] || "No especificado";
 
-    // 3. ARMAR FILA (Mapeando los nombres correctos del HTML)
-    // Usamos datos.fechaNac, datos.tel, datos.cat, etc.
+    // 3. ARMAR FILA
     const fila = [
-      sheet.getLastRow(), 
-      datos.nombre, 
-      datos.apellido, 
+      sheet.getLastRow() + 1,
+      datos.nombre,
+      datos.apellido,
       dniLimpio,
-      datos.fechaNac,   // E - Fecha_Nac
-      datos.tel,        // F - Telefono
-      datos.email,      // G - Email
-      datos.cat,        // H - Categoria
-      barrioEncontrado, // I - Barrio
-      datos.inst,       // J - Institución
-      infoSede[4] || "",// K - Fecha_cursada1
-      infoSede[5] || "",// L - Fecha_cursada2
-      infoSede[6] || "",// M - Fecha_examen
-      0,                // N - Asistencia (Inicia en 0)
-      "",               // O - Nota
-      "INSCRIPTO"       // P - Estado
+      datos.fechaNac,
+      datos.tel,
+      datos.email,
+      datos.cat,
+      barrioEncontrado,
+      datos.inst,
+      infoSede[4] || "",
+      infoSede[5] || "",
+      infoSede[6] || "",
+      0,
+      "",
+      "INSCRIPTO"
     ];
 
     sheet.appendRow(fila);
-    
-    // 4. REGISTRO Y MAIL
-    registrarAccion(dniLimpio, "ALUMNO SE INSCRIBIÓ", datos.inst);
 
+    // 4. REGISTRAR EN HISTORIAL
+    registrarAccion(
+      dniLimpio,
+      "NUEVA INSCRIPCIÓN",
+      `Alumno: ${datos.apellido}, ${datos.nombre} | Cat: ${datos.cat} | Inst: ${datos.inst}`
+    );
+
+    // 5. ENVÍO DE MAIL
     if (datos.email && datos.email.includes("@")) {
       try {
         const fechasObj = {
-          fecha1: infoSede[4], 
-          fecha2: infoSede[5], 
+          fecha1: infoSede[4],
+          fecha2: infoSede[5],
           fechaExamen: infoSede[6]
         };
+
         enviarMailConfirmacion(datos.email, datos, fechasObj);
+
       } catch (eMail) {
         console.warn("Fallo envío mail: " + eMail.message);
       }
     }
-    
+
     return { success: true };
 
-  } catch (e) { 
-    return { success: false, message: "Error en servidor: " + e.toString() }; 
+  } catch (e) {
+    return { success: false, message: "Error en servidor: " + e.toString() };
   }
 }
 
@@ -324,27 +329,43 @@ function obtenerSedesUnicas() {
 }
 
 function obtenerDetalleExamen(dni) {
+
   try {
+
     const sheet = getSheet(SHEETS.RESPUESTAS);
     const data = sheet.getDataRange().getValues();
-    const dStr = dni.toString().replace(/\D/g, "");
+    const dStr = dni.toString().replace(/\D/g,"");
 
-    // Buscamos de abajo hacia arriba para traer el examen más reciente
     for (let i = data.length - 1; i >= 1; i--) {
-      if (data[i][1].toString().replace(/\D/g, "") === dStr) {
+
+      if (data[i][COL_RESP.DNI].toString().replace(/\D/g,"") === dStr) {
+
+        const respuestas = typeof data[i][COL_RESP.RESPUESTAS] === "string"
+          ? JSON.parse(data[i][COL_RESP.RESPUESTAS])
+          : data[i][COL_RESP.RESPUESTAS];
+
         return {
-          success: true,
-          fecha: Utilities.formatDate(data[i][0], "GMT-3", "dd/MM/yyyy HH:mm"),
-          nota: data[i][2],
-          respuestas: JSON.parse(data[i][3]), // El array de {pregunta, respuesta, estado...}
-          comentario: data[i][4]
+          success:true,
+          fecha:Utilities.formatDate(data[i][COL_RESP.FECHA],"GMT-3","dd/MM/yyyy HH:mm"),
+          nota:data[i][COL_RESP.NOTA],
+          estado:data[i][COL_RESP.ESTADO],
+          respuestas:respuestas
         };
+
       }
     }
-    return { success: false };
-  } catch (e) {
-    return { success: false, error: e.toString() };
+
+    return {success:false};
+
+  } catch(e) {
+
+    return {
+      success:false,
+      error:e.toString()
+    };
+
   }
+
 }
 
 function marcarAsistencia(dniAlumno, esSuma, dniOperador) {
@@ -553,23 +574,43 @@ function buscarAlumnoParaEdicion(query) {
   }
 }
 // --- 7. AUXILIARES ---
-function marcarTramiteFinalizado(dni) {
+function marcarTramiteFinalizado(dni, dniOperador) {
+
   try {
+
     const sheet = getSheet(SHEETS.INSCRIPCIONES);
     const data = sheet.getDataRange().getValues();
     const dAlu = dni.toString().replace(/\D/g, "");
 
     for (let i = 1; i < data.length; i++) {
-      if (data[i][COL.DNI].toString().replace(/\D/g, "") === dAlu) {
-        // Marcamos la columna NOTA como FINALIZADO o ENTREGADO
-        // Y la columna ESTADO (TRAMITE) como FINALIZADO
-        sheet.getRange(i + 1, COL.NOTA + 1).setValue("FINALIZADO");
-        sheet.getRange(i + 1, COL.ESTADO + 1).setValue("CERTIFICADO ENTREGADO");
+
+      if (data[i][COL_INS.DNI].toString().replace(/\D/g, "") === dAlu) {
+
+        // NO tocamos la nota (columna O)
+
+        // Estado del trámite → columna P
+        sheet.getRange(i + 1, COL_INS.ESTADO_TRAMITE + 1)
+          .setValue("FINALIZADO");
+
+        // Operador que entregó certificado → columna Q
+        if (dniOperador) {
+          sheet.getRange(i + 1, COL_INS.OPERADOR + 1)
+            .setValue(dniOperador);
+        }
+
         return true;
       }
+
     }
+
+    return false;
+
   } catch (e) {
+
     console.error("Error en marcarTramiteFinalizado: " + e.toString());
     return false;
+
   }
+
 }
+
