@@ -3,79 +3,33 @@
 
 <head>
   <base target="_top">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Materialize -->
+  <link rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <!-- Material Icons -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <!-- Tu CSS -->
+  <link rel="stylesheet" href="global.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <style>
-    :root {
-      --azul: #1565c0;
-      --verde: #2e7d32;
-    }
-
-    body {
-      background: #f0f2f5;
-    }
-
-    .nav-mesa {
-      background: var(--azul);
-      padding: 10px 20px;
-      color: white;
-      margin-bottom: 20px;
-    }
-
-    .card-alumno {
-      border-radius: 15px;
-      margin-top: 20px;
-      display: none;
-    }
-
-    .status-badge {
-      padding: 5px 12px;
-      border-radius: 20px;
-      font-weight: bold;
-      color: white;
-    }
-
-    .bg-aprobado {
-      background-color: var(--verde);
-    }
-
-    .bg-desaprobado {
-      background-color: #d32f2f;
-    }
-
-    .bg-pendiente {
-      background-color: #ffa000;
-    }
-
-    .loader {
-      display: none;
-      margin: 20px auto;
-    }
-    .hero {
-  text-align: center;
-  margin-bottom: 40px;
-  width: 100%;
-  cursor: pointer;
+<style>
+body{
+  background:#f0f2f5;
 }
 
-.hero img {
-  max-height: 100px;
-  margin-bottom: 10px;
+.nav-mesa{
+  background:#1565c0;
+  padding:10px 20px;
+  color:white;
+  margin-bottom:20px;
 }
 
-.hero-link{
-  text-decoration:none;
-  color:inherit;
-  display:block;
+.card-alumno{
+  border-radius:15px;
+  margin-top:20px;
+  display:none;
 }
-
-.hero:hover{
-  opacity:0.9;
-  transition:0.2s;
-}
-  </style>
+</style>
 </head>
 
 <body>

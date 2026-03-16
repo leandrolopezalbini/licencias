@@ -3,79 +3,27 @@
 
 <head>
   <base target="_top">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Materialize -->
+  <link rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <!-- Material Icons -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <!-- Tu CSS -->
+  <link rel="stylesheet" href="global.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <style>
-    :root {
-      --azul: #1a237e;
-      --celeste: #e3f2fd;
-    }
-
-    body {
-      background: #f4f7f9;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-    }
-
-.hero {
-  text-align: center;
-  margin-bottom: 40px;
-  width: 100%;
-  cursor: pointer;
+<style>
+body{
+  background:#f4f7f9;
+  display:flex;
+  align-items:center;
 }
 
-.hero img {
-  max-height: 100px;
-  margin-bottom: 10px;
+.card-title{
+  font-weight:bold !important;
+  color:#333;
 }
-
-.hero-link{
-  text-decoration:none;
-  color:inherit;
-  display:block;
-}
-
-.hero:hover{
-  opacity:0.9;
-  transition:0.2s;
-}
-    .menu-card {
-      border-radius: 20px;
-      transition: 0.3s;
-      cursor: pointer;
-      border: none;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
-    }
-
-    .menu-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
-    }
-
-    .icon-circle {
-      width: 70px;
-      height: 70px;
-      background: var(--celeste);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 15px;
-    }
-
-    .icon-circle i {
-      color: var(--azul);
-      font-size: 35px;
-    }
-
-    .card-title {
-      font-weight: bold !important;
-      color: #333;
-    }
-  </style>
+</style>
 </head>
 
 <body>
